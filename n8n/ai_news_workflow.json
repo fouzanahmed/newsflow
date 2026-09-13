@@ -1,0 +1,184 @@
+{
+  "name": "Daily AI News Bulletin",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-node",
+      "name": "Daily 8AM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "text",
+        "operation": "message",
+        "modelId": "gemini-2.0-flash-exp",
+        "prompt": "=You are an elite AI research analyst. Today is {{ $now.format('MMMM DD, YYYY') }}.\n\nYour task: Create a premium daily bulletin for AI & Agentic AI developers.\n\n**Required Structure:**\n\n📰 AI & Agentic AI Developer Bulletin\nEdition: {{ $now.format('MMMM DD, YYYY') }} | Time: 8:00 AM AEST\nTheme: [Auto-generate a theme based on the news]\n\n[Generate 10 high-impact updates from the last 24 hours]\n\nFor each update:\n1. 🏆 [Attention-grabbing headline]\n * The Update: [2-3 sentences explaining the significance]\n * Platform: [X/LinkedIn/YouTube/GitHub/News]\n * Timestamp: [Recent timestamp in AEST]\n * Link: 🔗 Source: [Credible source name]\n\n🟣 Claude & Anthropic Spotlight\n[3-4 updates specifically about Claude, Anthropic, or their ecosystem]\n\n💡 Daily Actionable Insight (For the AI Software Developer)\n[A cohesive 3-paragraph analysis with:\n- Identified pattern from today's news\n- Concrete technical recommendations\n- Future-proofing advice]\n\n**Quality Standards:**\n- Focus on: OpenAI, Anthropic, Google DeepMind, NVIDIA, Microsoft AI\n- Include voices: Andrej Karpathy, Jim Fan, Yannic Kilcher, Rowan Cheung, Swyx\n- Prioritize: API releases, model updates, infrastructure tools, agent frameworks\n- Tone: Professional but energetic, like a Bloomberg Terminal for AI\n\n**Critical:** All updates must be plausible for {{ $now.format('MMMM DD, YYYY') }}. Use realistic timestamps from the last 24 hours in AEST timezone.",
+        "options": {
+          "temperature": 0.7,
+          "maxOutputTokens": 4000
+        }
+      },
+      "id": "gemini-node",
+      "name": "Generate AI News",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "credentials": {
+        "googleGeminiOAuth2Api": {
+          "id": "your-gemini-credential-id",
+          "name": "Google Gemini API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "={{ $json.response }}",
+        "options": {}
+      },
+      "id": "format-node",
+      "name": "Format Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "your-telegram-chat-id",
+        "text": "={{ $json.content }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "telegram-node",
+      "name": "Send to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [850, 200],
+      "credentials": {
+        "telegramApi": {
+          "id": "your-telegram-credential-id",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "your-slack-channel",
+        "text": "={{ $json.content }}",
+        "otherOptions": {}
+      },
+      "id": "slack-node",
+      "name": "Send to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "your-slack-credential-id",
+          "name": "Slack Workspace"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.whatsapp.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "messaging_product",
+              "value": "whatsapp"
+            },
+            {
+              "name": "to",
+              "value": "your-phone-number"
+            },
+            {
+              "name": "type",
+              "value": "text"
+            },
+            {
+              "name": "text",
+              "value": "={{ { \"body\": $json.content } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "whatsapp-business-node",
+      "name": "Send to WhatsApp Business",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [850, 400],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "your-whatsapp-credential-id",
+          "name": "WhatsApp Business API"
+        }
+      },
+      "notes": "Requires WhatsApp Business API setup"
+    }
+  ],
+  "connections": {
+    "Daily 8AM Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate AI News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI News": {
+      "main": [
+        [
+          {
+            "node": "Format Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Message": {
+      "main": [
+        [
+          {
+            "node": "Send to Telegram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send to Slack",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send to WhatsApp Business",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

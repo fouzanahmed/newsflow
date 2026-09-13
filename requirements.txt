@@ -1,0 +1,10 @@
+fastapi>=0.115,<0.116
+uvicorn[standard]>=0.30,<0.31
+scikit-learn>=1.5,<2.0
+pydantic>=2.7,<3
+
+# Optional: only needed for the live agent path (generate_bulletin_live).
+# The fallback retrieval path works without these.
+langchain>=0.3,<0.4
+langchain-anthropic>=0.2,<0.3
+langchain-core>=0.3,<0.4

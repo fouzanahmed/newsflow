@@ -1,0 +1,32 @@
+[
+  {
+    "id": "n1",
+    "title": "Anthropic releases Claude Agent SDK for building autonomous coding agents",
+    "text": "Anthropic published the Claude Agent SDK, giving developers the same agent harness used internally by Claude Code: a permissioned tool loop, subagent orchestration, and hooks for CI integration. Early adopters report it reduces the boilerplate needed to wire an LLM into a multi-step tool-using workflow."
+  },
+  {
+    "id": "n2",
+    "title": "LangGraph adds native support for durable, resumable agent state",
+    "text": "LangGraph's latest release lets long-running agent graphs checkpoint their state to disk or a database, so a multi-hour research agent can be paused and resumed without losing progress. This targets production agent deployments where a single process can't be guaranteed to run uninterrupted."
+  },
+  {
+    "id": "n3",
+    "title": "Model Context Protocol (MCP) adoption grows among IDE vendors",
+    "text": "Several IDE and developer-tool vendors announced MCP server support this quarter, standardizing how AI assistants discover and call external tools like databases, ticket trackers, and internal APIs. Proponents argue this reduces the N-times-M integration problem between models and tools."
+  },
+  {
+    "id": "n4",
+    "title": "RAG evaluation benchmarks shift toward end-to-end task success",
+    "text": "New retrieval-augmented-generation benchmarks are moving away from pure retrieval-precision metrics toward measuring whether the final generated answer actually satisfies the user's task, arguing that a perfect retrieval step is worthless if the generation step ignores the retrieved context."
+  },
+  {
+    "id": "n5",
+    "title": "n8n expands AI node library for workflow automation",
+    "text": "n8n added new nodes for structured LLM output, vector-store lookups, and agent loops directly inside its visual workflow editor, aiming to let non-engineers assemble simple retrieval and agent pipelines without writing Python or JavaScript."
+  },
+  {
+    "id": "n6",
+    "title": "Open-source teams report mixed results from autonomous PR-writing agents",
+    "text": "Several open-source maintainers shared experiences running autonomous agents that open pull requests against real repositories. The consensus: agents are reliable for small, well-scoped changes like adding tests or fixing lint errors, but need human review for anything touching architecture or security-sensitive code."
+  }
+]
