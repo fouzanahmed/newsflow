@@ -28,5 +28,75 @@
     "id": "n6",
     "title": "Open-source teams report mixed results from autonomous PR-writing agents",
     "text": "Several open-source maintainers shared experiences running autonomous agents that open pull requests against real repositories. The consensus: agents are reliable for small, well-scoped changes like adding tests or fixing lint errors, but need human review for anything touching architecture or security-sensitive code."
+  },
+  {
+    "id": "n7",
+    "title": "Regulators publish draft transparency rules for general-purpose AI models",
+    "text": "A draft regulatory framework would require providers of general-purpose AI models to disclose training-data summaries, document known limitations, and report serious incidents to a supervisory authority. Industry groups welcomed the clarity but warned that compliance paperwork could weigh heavily on smaller providers."
+  },
+  {
+    "id": "n8",
+    "title": "AI safety researchers propose standardized red-teaming reports",
+    "text": "A coalition of safety researchers proposed a common template for publishing red-teaming results, covering jailbreak resistance, misuse scenarios, and dangerous-capability evaluations. The goal is to let outside reviewers compare how different labs test models before release instead of relying on one-off blog posts."
+  },
+  {
+    "id": "n9",
+    "title": "Data-center operators race to secure power for AI training clusters",
+    "text": "Operators building large GPU clusters for model training say electricity supply, not chip availability, is now the main bottleneck. New facilities are being sited next to power plants and some operators are signing long-term contracts for nuclear and renewable energy to guarantee capacity."
+  },
+  {
+    "id": "n10",
+    "title": "Inference accelerators target lower cost per token",
+    "text": "A wave of specialized inference chips promises lower cost per generated token than general-purpose GPUs by optimizing memory bandwidth and supporting low-precision formats like FP8 and INT4. Analysts caution that software ecosystem maturity, not raw hardware speed, will decide which accelerators see wide adoption."
+  },
+  {
+    "id": "n11",
+    "title": "Open-weight language models close the gap on reasoning benchmarks",
+    "text": "The latest open-weight model releases now score within a few points of proprietary frontier models on math and coding reasoning benchmarks. Developers cite the ability to fine-tune and self-host as the main draw, while critics note that benchmark contamination makes headline numbers hard to trust."
+  },
+  {
+    "id": "n12",
+    "title": "Small distilled models gain ground for on-device assistants",
+    "text": "Phone and laptop makers are shipping compact distilled models that run entirely on-device for tasks like summarizing notifications and drafting replies. Running locally improves privacy and latency, though the small models still hand harder requests off to a cloud model."
+  },
+  {
+    "id": "n13",
+    "title": "Vector database vendors add hybrid keyword and embedding search",
+    "text": "Several vector database vendors now combine BM25 keyword scoring with dense embedding similarity in a single query, after customers found pure embedding search missed exact matches on product codes, names, and acronyms. Hybrid ranking is quickly becoming the default recommendation for production retrieval systems."
+  },
+  {
+    "id": "n14",
+    "title": "Enterprises report that most generative AI pilots stall before production",
+    "text": "A survey of large companies found that most generative AI pilots never reach production, with respondents citing unclear return on investment, data-governance concerns, and difficulty evaluating output quality. Teams that did ship tended to start with narrow internal use cases such as support-ticket triage."
+  },
+  {
+    "id": "n15",
+    "title": "Startups versus big tech: where small AI companies still win",
+    "text": "Venture investors argue that while big tech firms dominate foundation-model training budgets, small startups keep winning in vertical applications such as legal drafting, insurance claims, and logistics, where deep domain knowledge and fast iteration matter more than owning the largest model."
+  },
+  {
+    "id": "n16",
+    "title": "Hospitals trial AI scribes to cut clinician documentation time",
+    "text": "Several hospital systems are piloting ambient AI scribes that listen to patient visits and draft clinical notes for the doctor to review and sign. Early results show reduced after-hours charting, but clinicians stress that every note still needs human verification to catch medication and dosage errors."
+  },
+  {
+    "id": "n17",
+    "title": "AI models accelerate protein structure and drug candidate screening",
+    "text": "Pharmaceutical researchers are using protein-structure prediction and generative chemistry models to screen drug candidates in silico before any lab work begins. The approach shortens early discovery, though promising molecules must still pass traditional wet-lab testing and clinical trials."
+  },
+  {
+    "id": "n18",
+    "title": "Humanoid robot makers turn to foundation models for general manipulation",
+    "text": "Robotics companies are training vision-language-action models on large datasets of teleoperated demonstrations so a single policy can fold laundry, sort parcels, and load dishwashers. Reliability in messy real-world homes and warehouses remains the key hurdle before broad commercial deployment."
+  },
+  {
+    "id": "n19",
+    "title": "Multimodal models learn to understand long videos",
+    "text": "New multimodal models can answer questions about hour-long videos by combining frame sampling with long context windows, enabling use cases like searching meeting recordings or summarizing lecture footage. Researchers note the models still struggle with precise timestamps and counting events."
+  },
+  {
+    "id": "n20",
+    "title": "Prompt injection remains top security risk for tool-using agents",
+    "text": "Security teams warn that agents which browse the web or read email can be hijacked by hidden instructions planted in that content, causing them to leak data or take unintended actions. Recommended mitigations include least-privilege tool permissions, human confirmation for sensitive actions, and treating all retrieved text as untrusted input."
   }
 ]
