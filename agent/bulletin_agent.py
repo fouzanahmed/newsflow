@@ -10,13 +10,25 @@ Two paths:
     relevant snippets from the local corpus and formats them directly.
     This is the path tests and CI actually exercise.
 
-generate_bulletin() tries the live path first and falls back on any
+generate_bulletin() tries the live path first -- retrying transient
+failures with exponential backoff -- and falls back on any remaining
 failure (missing key, missing package, API error), so the public
-interface always returns a real, structured result either way.
+interface always returns a real, structured result either way. Which
+path served each request is logged, and is also visible in the
+result's "source" field.
 """
+import logging
 import os
+import time
 
 from rag.retriever import NewsRetriever
+
+logger = logging.getLogger(__name__)
+
+# Live-path retry policy: up to LIVE_MAX_ATTEMPTS calls, sleeping
+# LIVE_BACKOFF_BASE_SECONDS * 2**(attempt-1) between them (0.5s, 1s, ...).
+LIVE_MAX_ATTEMPTS = 3
+LIVE_BACKOFF_BASE_SECONDS = 0.5
 
 _retriever = NewsRetriever()
 
@@ -63,10 +75,43 @@ def generate_bulletin_live(topic: str) -> dict:
     }
 
 
+def _generate_bulletin_live_with_retry(topic: str) -> dict:
+    """Calls the live path, retrying transient failures with exponential
+    backoff. ImportError (langchain / langchain-anthropic not installed) is
+    not retried -- it cannot succeed on a later attempt. Raises the last
+    exception once attempts are exhausted."""
+    for attempt in range(1, LIVE_MAX_ATTEMPTS + 1):
+        try:
+            return generate_bulletin_live(topic)
+        except ImportError:
+            raise
+        except Exception as exc:
+            if attempt == LIVE_MAX_ATTEMPTS:
+                raise
+            delay = LIVE_BACKOFF_BASE_SECONDS * (2 ** (attempt - 1))
+            logger.warning(
+                "Live agent attempt %d/%d failed for topic %r (%s: %s); "
+                "retrying in %.1fs",
+                attempt, LIVE_MAX_ATTEMPTS, topic,
+                type(exc).__name__, exc, delay,
+            )
+            time.sleep(delay)
+    raise AssertionError("unreachable")  # loop always returns or raises
+
+
 def generate_bulletin(topic: str) -> dict:
     if os.getenv("ANTHROPIC_API_KEY"):
         try:
-            return generate_bulletin_live(topic)
-        except Exception:
-            pass  # any missing package / API failure -> fall back below
+            result = _generate_bulletin_live_with_retry(topic)
+            logger.info("Bulletin for topic %r served by live agent path", topic)
+            return result
+        except Exception as exc:
+            logger.warning(
+                "Live agent path failed for topic %r (%s: %s); "
+                "falling back to retrieval-only path",
+                topic, type(exc).__name__, exc,
+            )
+    else:
+        logger.info("ANTHROPIC_API_KEY not set; skipping live agent path")
+    logger.info("Bulletin for topic %r served by fallback retrieval path", topic)
     return _fallback_bulletin(topic)
