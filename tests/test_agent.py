@@ -1,6 +1,7 @@
+import pytest
 from fastapi.testclient import TestClient
 
-from agent.app import app
+from agent.app import TOPIC_MAX_LENGTH, app
 from agent.bulletin_agent import generate_bulletin
 
 client = TestClient(app)
@@ -27,3 +28,32 @@ def test_bulletin_endpoint_fallback_path(monkeypatch):
     body = resp.json()
     assert body["source"] == "fallback_retrieval"
     assert "items" in body
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        pytest.param({"topic": ""}, id="empty-string"),
+        pytest.param({"topic": "   \t\n "}, id="whitespace-only"),
+        pytest.param({}, id="missing-field"),
+        pytest.param({"topic": "x" * (TOPIC_MAX_LENGTH + 1)}, id="too-long"),
+    ],
+)
+def test_bulletin_rejects_invalid_topic(payload):
+    resp = client.post("/bulletin", json=payload)
+    assert resp.status_code == 422
+    errors = resp.json()["detail"]
+    assert any(err["loc"][-1] == "topic" for err in errors)
+
+
+def test_bulletin_accepts_topic_at_max_length(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    resp = client.post("/bulletin", json={"topic": "x" * TOPIC_MAX_LENGTH})
+    assert resp.status_code == 200
+
+
+def test_bulletin_strips_padded_topic(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    resp = client.post("/bulletin", json={"topic": "  MCP  "})
+    assert resp.status_code == 200
+    assert resp.json()["topic"] == "MCP"
