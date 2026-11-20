@@ -27,7 +27,9 @@ class NewsRetriever:
         query_vec = self.vectorizer.transform([query])
         scores = cosine_similarity(query_vec, self.doc_matrix)[0]
         ranked = sorted(
-            zip(self.documents, scores), key=lambda pair: pair[1], reverse=True
+            zip(self.documents, scores, strict=True),
+            key=lambda pair: pair[1],
+            reverse=True,
         )
         return [
             {**doc, "score": float(score)} for doc, score in ranked[:k] if score > 0
