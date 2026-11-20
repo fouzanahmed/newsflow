@@ -5,7 +5,8 @@ def test_retrieve_returns_relevant_doc_for_matching_query():
     retriever = NewsRetriever()
     results = retriever.retrieve("Model Context Protocol MCP tools", k=1)
     assert len(results) == 1
-    assert "MCP" in results[0]["title"] or "Model Context Protocol" in results[0]["title"]
+    title = results[0]["title"]
+    assert "MCP" in title or "Model Context Protocol" in title
 
 
 def test_retrieve_respects_k():
