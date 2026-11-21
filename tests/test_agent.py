@@ -52,6 +52,49 @@ def test_bulletin_accepts_topic_at_max_length(monkeypatch):
     assert resp.status_code == 200
 
 
+def test_openapi_documents_bulletin_response_schema():
+    spec = client.get("/openapi.json").json()
+    ok = spec["paths"]["/bulletin"]["post"]["responses"]["200"]
+    ref = ok["content"]["application/json"]["schema"]["$ref"]
+    assert ref.endswith("/BulletinResponse")
+
+    schemas = spec["components"]["schemas"]
+    resp_schema = schemas["BulletinResponse"]
+    assert set(resp_schema["required"]) == {"topic", "source", "headline"}
+    assert {"items", "bulletin_text"} <= set(resp_schema["properties"])
+    assert set(resp_schema["properties"]["source"]["enum"]) == {
+        "fallback_retrieval",
+        "langchain_agent_claude",
+    }
+    assert set(schemas["BulletinItem"]["required"]) == {"title", "summary"}
+
+
+def test_bulletin_fallback_response_omits_bulletin_text(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    body = client.post("/bulletin", json={"topic": "MCP adoption"}).json()
+    assert "bulletin_text" not in body
+    assert body["items"]
+    assert all(set(item) == {"title", "summary"} for item in body["items"])
+
+
+def test_bulletin_live_agent_shape_passes_response_model(monkeypatch):
+    def fake_generate(topic):
+        return {
+            "topic": topic,
+            "source": "langchain_agent_claude",
+            "headline": f"AI & Agentic AI Developer Bulletin: {topic}",
+            "bulletin_text": "- point one\n- point two",
+        }
+
+    monkeypatch.setattr("agent.app.generate_bulletin", fake_generate)
+    resp = client.post("/bulletin", json={"topic": "MCP"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["source"] == "langchain_agent_claude"
+    assert body["bulletin_text"] == "- point one\n- point two"
+    assert "items" not in body
+
+
 def test_bulletin_strips_padded_topic(monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     resp = client.post("/bulletin", json={"topic": "  MCP  "})
