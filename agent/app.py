@@ -1,3 +1,5 @@
+from typing import List, Literal, Optional
+
 from fastapi import FastAPI
 from pydantic import BaseModel, Field, field_validator
 
@@ -21,11 +23,41 @@ class BulletinRequest(BaseModel):
         return v
 
 
+class BulletinItem(BaseModel):
+    title: str
+    summary: str
+
+
+class BulletinResponse(BaseModel):
+    """Response for POST /bulletin.
+
+    Exactly one of the two payload fields is populated, depending on `source`:
+      - "fallback_retrieval": `items` (retrieved corpus snippets)
+      - "langchain_agent_claude": `bulletin_text` (LLM-written bulletin)
+    """
+
+    topic: str
+    source: Literal["fallback_retrieval", "langchain_agent_claude"]
+    headline: str
+    items: Optional[List[BulletinItem]] = Field(
+        default=None, description="Present when source is 'fallback_retrieval'."
+    )
+    bulletin_text: Optional[str] = Field(
+        default=None, description="Present when source is 'langchain_agent_claude'."
+    )
+
+
 @app.get("/health")
 def health():
     return {"ok": True}
 
 
-@app.post("/bulletin")
+# response_model_exclude_none keeps each path's wire shape unchanged: the unused
+# payload field is omitted rather than serialized as null.
+@app.post(
+    "/bulletin",
+    response_model=BulletinResponse,
+    response_model_exclude_none=True,
+)
 def bulletin(req: BulletinRequest):
     return generate_bulletin(req.topic)
