@@ -4,15 +4,15 @@ An AI news bulletin system combining a scheduled n8n workflow with a Python agen
 
 ## What's real here
 
-- **`n8n/ai_news_workflow.json`** — a working n8n workflow ("Daily AI News Bulletin") that runs on a schedule and generates a daily AI/dev news bulletin via Gemini. This is the original, actually-deployed automation.
+- **`n8n/ai_news_workflow.json`** — a working n8n workflow ("Daily AI News Bulletin") that runs on a schedule, generates a daily AI/dev news bulletin via Gemini, and delivers it to Telegram, Slack and WhatsApp Business. This is the original, actually-deployed automation.
 - **`agent/` + `rag/`** — a separate Python demonstration of agentic tool-calling and retrieval-augmented generation, built to show the underlying techniques (LangChain tool-calling, retrieval) as real, testable code rather than only a workflow-tool configuration.
 
 ## Architecture
 
 ```
-                    ┌────────────────────┐
-   n8n (schedule) → │  Gemini prompt      │ → daily bulletin (existing, deployed)
-                    └────────────────────┘
+                    ┌────────────────────┐                     ┌→ Telegram
+   n8n (schedule) → │  Gemini prompt      │ → Format Message → ├→ Slack
+                    └────────────────────┘                     └→ WhatsApp Business
 
                     ┌────────────────────┐
    POST /bulletin → │ agent/app.py         │
@@ -42,9 +42,87 @@ uvicorn agent.app:app --reload
 curl -X POST http://127.0.0.1:8000/bulletin -H "Content-Type: application/json" -d '{"topic": "LangGraph"}'
 ```
 
+## API
+
+The FastAPI app (`agent/app.py`) has two endpoints.
+
+### `GET /health`
+
+Liveness check. Always returns:
+
+```json
+{"ok": true}
+```
+
+### `POST /bulletin`
+
+Request body:
+
+```json
+{"topic": "LangGraph"}
+```
+
+Validation (`BulletinRequest` in `agent/app.py`):
+
+- `topic` is required and must be a string.
+- The length is capped at `TOPIC_MAX_LENGTH = 200` characters. The cap is checked on the raw value, before stripping.
+- Leading and trailing whitespace is stripped, and the stripped value is what the agent receives. An empty or whitespace-only topic is rejected.
+
+A request that fails validation gets FastAPI's standard **422 Unprocessable Entity** response, for example for a 201-character topic:
+
+```json
+{
+  "detail": [
+    {
+      "type": "string_too_long",
+      "loc": ["body", "topic"],
+      "msg": "String should have at most 200 characters",
+      "input": "xxxx…",
+      "ctx": {"max_length": 200}
+    }
+  ]
+}
+```
+
+(A blank topic produces `"type": "value_error"` with `"msg": "Value error, topic must not be empty"`.)
+
+The response's `source` field shows which path produced the bulletin.
+
+**`"source": "fallback_retrieval"`**: no `ANTHROPIC_API_KEY` is set, or the live agent failed. The top 3 TF-IDF matches from the local corpus are returned as `items` (shown here with the summaries shortened):
+
+```json
+{
+  "topic": "LangGraph",
+  "source": "fallback_retrieval",
+  "headline": "AI & Agentic AI Developer Bulletin: LangGraph",
+  "items": [
+    {
+      "title": "LangGraph adds native support for durable, resumable agent state",
+      "summary": "LangGraph's latest release lets long-running agent graphs checkpoint their state to disk or a database, ..."
+    },
+    {"title": "...", "summary": "..."},
+    {"title": "...", "summary": "..."}
+  ]
+}
+```
+
+`items` can hold fewer than 3 entries, or none at all, if few corpus documents match the topic.
+
+**`"source": "langchain_agent_claude"`**: `ANTHROPIC_API_KEY` is set and the LangChain tool-calling agent succeeded. Instead of `items`, the response has the model's free-text bulletin (the text below is only an illustration; the real output comes from the LLM):
+
+```json
+{
+  "topic": "LangGraph",
+  "source": "langchain_agent_claude",
+  "headline": "AI & Agentic AI Developer Bulletin: LangGraph",
+  "bulletin_text": "- LangGraph now checkpoints long-running agent state so runs can be paused and resumed...\n- ..."
+}
+```
+
 ## Tests
 
 ```bash
+ruff check .
 pytest
 ```
 
@@ -52,4 +130,14 @@ Tests exercise the fallback (no-API-key) path only, by design — they're determ
 
 ## The n8n workflow
 
-Import `n8n/ai_news_workflow.json` into an n8n instance to run the scheduled bulletin generation. It uses a Gemini node and a schedule trigger; see the node parameters in the JSON for the exact prompt/schedule.
+Import `n8n/ai_news_workflow.json` into an n8n instance to run the scheduled bulletin generation. The nodes run in this order:
+
+1. **Daily 8AM Trigger** (`scheduleTrigger`): cron `0 8 * * *`.
+2. **Generate AI News** (Google Gemini chat node, `gemini-2.0-flash-exp`): writes the bulletin from the prompt stored in the node parameters.
+3. **Format Message** (`set`): copies the Gemini response into a `content` field.
+4. Three delivery nodes that run in parallel from Format Message:
+   - **Send to Telegram** (`telegram` node): sends `content` as Markdown to a chat ID.
+   - **Send to Slack** (`slack` node): posts `content` to a channel.
+   - **Send to WhatsApp Business** (`httpRequest` node): POSTs a `messaging_product: whatsapp` text message using HTTP header auth.
+
+The chat ID, Slack channel and WhatsApp phone number in the JSON are placeholders (`your-telegram-chat-id`, `your-slack-channel`, `your-phone-number`). Replace them, and attach your own Gemini, Telegram, Slack and WhatsApp credentials in n8n, before you activate the workflow.
