@@ -1,7 +1,5 @@
 """LangChain tool wrapping the local retriever, for the live-agent path."""
-from rag.retriever import NewsRetriever
-
-_retriever = NewsRetriever()
+from rag.retriever import get_retriever
 
 
 def search_recent_news(query: str) -> str:
@@ -11,7 +9,7 @@ def search_recent_news(query: str) -> str:
     there's no live web-search API wired in. Swap this function's body for
     a real search API call (Tavily, Bing, etc.) to make it live.
     """
-    results = _retriever.retrieve(query, k=3)
+    results = get_retriever().retrieve(query, k=3)
     if not results:
         return "No relevant articles found in the local sample corpus."
     return "\n\n".join(f"- {r['title']}: {r['text']}" for r in results)

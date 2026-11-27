@@ -16,13 +16,11 @@ interface always returns a real, structured result either way.
 """
 import os
 
-from rag.retriever import NewsRetriever
-
-_retriever = NewsRetriever()
+from rag.retriever import get_retriever
 
 
 def _fallback_bulletin(topic: str) -> dict:
-    snippets = _retriever.retrieve(topic, k=3)
+    snippets = get_retriever().retrieve(topic, k=3)
     return {
         "topic": topic,
         "source": "fallback_retrieval",
