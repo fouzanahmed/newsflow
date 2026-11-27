@@ -7,6 +7,7 @@ deterministic -- swap in a vector store here if you want embeddings-based
 retrieval; the interface (retrieve(query, k)) would stay the same.
 """
 import json
+from functools import lru_cache
 from pathlib import Path
 
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -32,3 +33,15 @@ class NewsRetriever:
         return [
             {**doc, "score": float(score)} for doc, score in ranked[:k] if score > 0
         ]
+
+
+@lru_cache(maxsize=1)
+def get_retriever() -> NewsRetriever:
+    """Return the app-wide shared NewsRetriever over the default corpus.
+
+    Built lazily on first call and cached, so the corpus is loaded and the
+    TF-IDF matrix fitted once per process rather than once per importing
+    module. This is the single seam to change if the retriever is swapped
+    for a vector store. Tests can reset it with get_retriever.cache_clear().
+    """
+    return NewsRetriever()
